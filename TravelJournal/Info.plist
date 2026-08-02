@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Travel Journal needs access to your photos to import trip albums and generate AI captions.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array/>
+	<key>CFBundleGetInfoString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string></string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>InstrumentSans-Regular.ttf</string>
+		<string>InstrumentSans-Medium.ttf</string>
+		<string>InstrumentSans-SemiBold.ttf</string>
+		<string>InstrumentSans-Bold.ttf</string>
+	</array>
+</dict>
+</plist>
