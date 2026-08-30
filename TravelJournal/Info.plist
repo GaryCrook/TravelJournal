@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Travel Journal needs access to your photos to import trip albums and generate AI captions.</string>
+	<string>Travel Journal AI reads your photo albums to import images, captions, and GPS locations for your travel journal. Your photos are processed entirely on device.</string>
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array/>
 	<key>CFBundleGetInfoString</key>

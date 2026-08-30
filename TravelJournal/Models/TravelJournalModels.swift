@@ -169,6 +169,8 @@ class Photo {
     var qualityScore: Double?    // AI-assigned 0.0–1.0 quality score; nil = not yet scored
     var isDuplicate: Bool = false
     var isIncluded: Bool = true  // false = auto-excluded by scoring; Gary can override
+    var isFavourite: Bool = false // manually starred by Gary
+    var isCoverPhoto: Bool = false // used as the trip card cover image
 
     @Relationship(deleteRule: .cascade, inverse: \PhotoAlbumPhoto.photo)
     var albumPhotos: [PhotoAlbumPhoto] = []

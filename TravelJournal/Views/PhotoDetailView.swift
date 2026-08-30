@@ -76,6 +76,48 @@ struct PhotoDetailView: View {
                             }
                         }
 
+                        // MARK: - Favourite & cover photo
+                        detailCard {
+                            sectionLabel("Photo Options", systemImage: "star")
+                            Toggle(isOn: $photo.isFavourite) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(photo.isFavourite ? "Favourited" : "Add to favourites")
+                                        .font(DS.Font.callout)
+                                        .foregroundStyle(DS.Color.primary)
+                                    Text("Favourites appear first when choosing a cover photo.")
+                                        .font(DS.Font.label)
+                                        .foregroundStyle(DS.Color.secondary)
+                                }
+                            }
+                            .tint(.yellow)
+                            .onChange(of: photo.isFavourite) { _, _ in
+                                try? modelContext.save()
+                            }
+
+                            Divider().background(DS.Color.border)
+
+                            Toggle(isOn: $photo.isCoverPhoto) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(photo.isCoverPhoto ? "Trip cover photo" : "Use as trip cover")
+                                        .font(DS.Font.callout)
+                                        .foregroundStyle(DS.Color.primary)
+                                    Text("This photo will appear on the trip card in the trip list.")
+                                        .font(DS.Font.label)
+                                        .foregroundStyle(DS.Color.secondary)
+                                }
+                            }
+                            .tint(DS.Color.primary)
+                            .onChange(of: photo.isCoverPhoto) { _, newValue in
+                                if newValue {
+                                    // Clear cover flag from all other photos in this trip
+                                    for other in photo.trip?.photos ?? [] where other.id != photo.id {
+                                        other.isCoverPhoto = false
+                                    }
+                                }
+                                try? modelContext.save()
+                            }
+                        }
+
                         // MARK: - Include / exclude toggle
                         detailCard {
                             sectionLabel("Journal Inclusion", systemImage: "book.pages")

@@ -131,15 +131,25 @@ class GPSClusteringService {
                let mapItems = try? await request.mapItems,
                let mapItem = mapItems.first {
                 let rawName = mapItem.name ?? ""
-                city        = mapItem.addressRepresentations?.cityWithContext ?? ""
-                country     = ""   // no structured country field in iOS 26/27
+                city    = mapItem.addressRepresentations?.cityWithContext ?? ""
+
+                // Extract country from the formatted address representation.
+                // MKAddressRepresentations doesn't expose a dedicated country
+                // property in iOS 26/27, so parse the locale-aware formatted
+                // string. The country is consistently the last non-empty line
+                // when the address is formatted for the device locale.
+                if let formatted = mapItem.addressRepresentations?.formatted {
+                    country = formatted
+                        .components(separatedBy: "\n")
+                        .map { $0.trimmingCharacters(in: .whitespaces) }
+                        .filter { !$0.isEmpty }
+                        .last ?? ""
+                }
 
                 // mapItem.name can be a POI name ("The High Line") or a street
                 // address ("20 Commerce St"). Street addresses start with a digit.
                 // When it's a street address, fall back to the city name so the
                 // journal reads "New York" rather than "20 Commerce St".
-                // MKAddressRepresentations doesn't expose subLocality in iOS 26/27
-                // and MKMapItem.placemark is deprecated — city is the safest fallback.
                 let isStreetAddress = rawName.first?.isNumber ?? false
                 if isStreetAddress {
                     name = city.isEmpty ? rawName : city

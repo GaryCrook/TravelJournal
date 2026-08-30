@@ -156,6 +156,23 @@ class PhotoCaptioningService {
                     photo.aiCaptionLong = ""
                 }
                 timeoutTask.cancel()
+            } else {
+                // iOS 26: vision not available, fall back to metadata-only captioning.
+                // generateCaptionFromMetadata only uses text generation (iOS 26+).
+                if #available(iOS 26, *) {
+                    if let result = await generateCaptionFromMetadata(
+                        people: people, location: locationName, date: shotDate
+                    ) {
+                        photo.aiCaption = result.shortCaption
+                        photo.aiCaptionLong = result.longCaption
+                    } else {
+                        photo.aiCaption = ""
+                        photo.aiCaptionLong = ""
+                    }
+                } else {
+                    photo.aiCaption = ""
+                    photo.aiCaptionLong = ""
+                }
             }
         }
 
@@ -257,7 +274,7 @@ class PhotoCaptioningService {
         \(contextBlock)
         """
 
-        let session = LanguageModelSession { systemPrompt }
+        let session = LanguageModelSession(instructions: systemPrompt)
 
         let instruction = contextLines.isEmpty
             ? "Describe this travel photo with a short caption and a longer sentence."
@@ -279,7 +296,7 @@ class PhotoCaptioningService {
 
     // MARK: - Caption generation (metadata only)
 
-    @available(iOS 27, *)
+    @available(iOS 26, *)
     private func generateCaptionFromMetadata(
         people: [String],
         location: String?,
@@ -293,8 +310,7 @@ class PhotoCaptioningService {
         contextParts.append("Date: \(date.formatted(date: .long, time: .omitted))")
         let contextBlock = contextParts.joined(separator: ". ")
 
-        let session = LanguageModelSession {
-            """
+        let session = LanguageModelSession(instructions: """
             You are a travel photo captioner writing for a personal travel journal.
             Write only from the facts given below — do not invent details,
             atmosphere, or emotions that aren't stated.
@@ -303,7 +319,7 @@ class PhotoCaptioningService {
             by name at all — describe the location and moment generically.
             Plain prose only — no markdown.
             """
-        }
+        )
 
         let prompt = """
         Write a short caption and a longer sentence for a travel photo taken with these details:

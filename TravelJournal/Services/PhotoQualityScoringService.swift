@@ -161,12 +161,16 @@ class PhotoQualityScoringService {
             options.deliveryMode = .opportunistic
             options.resizeMode = .fast
 
+            var resumed = false
             PHImageManager.default().requestImage(
                 for: asset,
                 targetSize: CGSize(width: 768, height: 768),
                 contentMode: .aspectFit,
                 options: options
-            ) { image, _ in
+            ) { image, info in
+                let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                guard !isDegraded, !resumed else { return }
+                resumed = true
                 continuation.resume(returning: image)
             }
         }
@@ -176,8 +180,7 @@ class PhotoQualityScoringService {
 
     @available(iOS 27, *)
     private func generateScore(image: UIImage) async -> PhotoScore? {
-        let session = LanguageModelSession {
-            """
+        let session = LanguageModelSession(instructions: """
             You are a travel photo quality assessor. Evaluate photos on:
             - Sharpness and focus
             - Exposure (not too dark, not blown out)
@@ -186,7 +189,7 @@ class PhotoQualityScoringService {
             Be strict — most snapshots score between 0.4 and 0.8.
             Reserve 0.9–1.0 for genuinely excellent photos.
             """
-        }
+        )
 
         do {
             let response = try await session.respond(

@@ -12,6 +12,7 @@ struct TripListView: View {
     @State private var showingSettings = false
     @State private var searchText = ""
     @State private var selectedYear: Int? = nil
+    @State private var showingFilters = false
 
     // Unique years from all trips, newest first
     private var years: [Int] {
@@ -46,9 +47,10 @@ struct TripListView: View {
                         sectionLabel
                             .padding(.horizontal, DS.Spacing.screen)
                             .padding(.bottom, DS.Spacing.md)
-                        if !years.isEmpty {
+                        if !years.isEmpty && showingFilters {
                             yearFilterRow
                                 .padding(.bottom, DS.Spacing.lg)
+                                .transition(.move(edge: .top).combined(with: .opacity))
                         }
                         tripCardList
                     }
@@ -122,13 +124,19 @@ struct TripListView: View {
             .background(DS.Color.surface)
             .clipShape(RoundedRectangle(cornerRadius: DS.Radius.medium))
 
-            // Filter icon button
-            Image(systemName: "slider.horizontal.3")
-                .font(.system(size: 16, weight: .medium))
-                .frame(width: 50, height: 50)
-                .background(DS.Color.surface)
-                .foregroundStyle(DS.Color.primary)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.medium))
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showingFilters.toggle()
+                    if !showingFilters { selectedYear = nil }
+                }
+            } label: {
+                Image(systemName: showingFilters ? "slider.horizontal.3" : "slider.horizontal.3")
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(width: 50, height: 50)
+                    .background(showingFilters ? DS.Color.primary : DS.Color.surface)
+                    .foregroundStyle(showingFilters ? .white : DS.Color.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.medium))
+            }
         }
     }
 
@@ -177,6 +185,13 @@ struct TripListView: View {
                         TripCardView(trip: trip)
                     }
                     .buttonStyle(.plain)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            modelContext.delete(trip)
+                        } label: {
+                            Label("Delete Trip", systemImage: "trash")
+                        }
+                    }
                 }
             }
             .padding(.horizontal, DS.Spacing.screen)
@@ -209,13 +224,6 @@ struct TripListView: View {
         .padding(.top, 80)
     }
 
-    // MARK: - Delete (swipe)
-
-    private func deleteTrips(at offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(trips[index])
-        }
-    }
 }
 
 // MARK: - Trip Card View
@@ -223,13 +231,20 @@ struct TripListView: View {
 struct TripCardView: View {
     let trip: Trip
 
-    // Use the first chronological photo as the cover
+    // Cover priority: manually chosen > first favourite > first included > any photo
     private var coverPhotoId: String? {
-        trip.photos
+        if let cover = trip.photos.first(where: { $0.isCoverPhoto }) {
+            return cover.assetIdentifier
+        }
+        if let fav = trip.photos.filter({ $0.isFavourite && $0.isIncluded })
+                                .sorted({ $0.datetime < $1.datetime }).first {
+            return fav.assetIdentifier
+        }
+        return trip.photos
             .filter { $0.isIncluded }
             .sorted { $0.datetime < $1.datetime }
             .first?.assetIdentifier
-        ?? trip.photos.sorted { $0.datetime < $1.datetime }.first?.assetIdentifier
+            ?? trip.photos.sorted { $0.datetime < $1.datetime }.first?.assetIdentifier
     }
 
     var body: some View {
@@ -340,21 +355,3 @@ extension Trip {
     }
 }
 
-// MARK: - Trip Stat View (kept for backwards compatibility)
-
-struct TripStatView: View {
-    let icon: String
-    let value: String
-    let label: String
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption2)
-                .foregroundStyle(DS.Color.secondary)
-            Text("\(value) \(label)")
-                .font(.caption2)
-                .foregroundStyle(DS.Color.secondary)
-        }
-    }
-}

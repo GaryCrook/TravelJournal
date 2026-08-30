@@ -162,8 +162,7 @@ class JournalGenerationService {
     /// Creates a fresh session per entry so entries are fully independent.
     /// `weather` is pre-filtered — pass empty string to suppress weather mention.
     private func generateText(for group: EntryGroup, weather: String) async -> String {
-        let session = LanguageModelSession {
-            """
+        let session = LanguageModelSession(instructions: """
             You write factual travel reports in a concise, first-person magazine style.
             Write ONLY from the facts provided. Do not invent sights, sounds, smells,
             atmosphere, or experiences that are not stated in the supplied information.
@@ -178,7 +177,7 @@ class JournalGenerationService {
             open by restating them. Do not begin with "I visited", "On [date]", or
             "We arrived at". Start mid-experience — with what was seen, done, or noticed.
             """
-        }
+        )
 
         let dateStr = group.date.formatted(date: .long, time: .omitted)
         let place = [group.location.name, group.location.city, group.location.country]
