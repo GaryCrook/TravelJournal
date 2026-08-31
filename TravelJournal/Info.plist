@@ -17,5 +17,9 @@
 		<string>InstrumentSans-SemiBold.ttf</string>
 		<string>InstrumentSans-Bold.ttf</string>
 	</array>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
+	<key>UILaunchScreen</key>
+	<dict/>
 </dict>
 </plist>

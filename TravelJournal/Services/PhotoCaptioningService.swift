@@ -133,47 +133,28 @@ class PhotoCaptioningService {
             }()
             let shotDate = photo.datetime
 
-            if #available(iOS 27, *) {
-                let captionTask = Task {
-                    if useVision, let image = await self.loadImage(from: asset) {
-                        return await self.generateCaptionWithVision(
-                            image: image, people: people, location: locationName, date: shotDate)
-                    } else {
-                        return await self.generateCaptionFromMetadata(
-                            people: people, location: locationName, date: shotDate)
-                    }
-                }
-                // 30s timeout — vision can hang in early betas
-                let timeoutTask = Task {
-                    try? await Task.sleep(for: .seconds(30))
-                    captionTask.cancel()
-                }
-                if let result = await captionTask.value {
-                    photo.aiCaption = result.shortCaption
-                    photo.aiCaptionLong = result.longCaption
+            let captionTask = Task {
+                if useVision, let image = await self.loadImage(from: asset) {
+                    return await self.generateCaptionWithVision(
+                        image: image, people: people, location: locationName, date: shotDate)
                 } else {
-                    photo.aiCaption = ""
-                    photo.aiCaptionLong = ""
-                }
-                timeoutTask.cancel()
-            } else {
-                // iOS 26: vision not available, fall back to metadata-only captioning.
-                // generateCaptionFromMetadata only uses text generation (iOS 26+).
-                if #available(iOS 26, *) {
-                    if let result = await generateCaptionFromMetadata(
-                        people: people, location: locationName, date: shotDate
-                    ) {
-                        photo.aiCaption = result.shortCaption
-                        photo.aiCaptionLong = result.longCaption
-                    } else {
-                        photo.aiCaption = ""
-                        photo.aiCaptionLong = ""
-                    }
-                } else {
-                    photo.aiCaption = ""
-                    photo.aiCaptionLong = ""
+                    return await self.generateCaptionFromMetadata(
+                        people: people, location: locationName, date: shotDate)
                 }
             }
+            // 30s timeout — vision can hang in early betas
+            let timeoutTask = Task {
+                try? await Task.sleep(for: .seconds(30))
+                captionTask.cancel()
+            }
+            if let result = await captionTask.value {
+                photo.aiCaption = result.shortCaption
+                photo.aiCaptionLong = result.longCaption
+            } else {
+                photo.aiCaption = ""
+                photo.aiCaptionLong = ""
+            }
+            timeoutTask.cancel()
         }
 
         try? context.save()
@@ -296,7 +277,6 @@ class PhotoCaptioningService {
 
     // MARK: - Caption generation (metadata only)
 
-    @available(iOS 26, *)
     private func generateCaptionFromMetadata(
         people: [String],
         location: String?,
