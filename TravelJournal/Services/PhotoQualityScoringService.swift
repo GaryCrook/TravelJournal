@@ -72,7 +72,7 @@ class PhotoQualityScoringService {
         progress = 0
         status = "Scoring \(total) photo\(total == 1 ? "" : "s")…"
 
-        if useVision, #available(iOS 27, *) {
+        if useVision, #available(iOS 27, macCatalyst 27, *) {
             // Check Apple Intelligence availability before attempting vision
             let model = SystemLanguageModel.default
             guard case .available = model.availability else {
@@ -93,7 +93,7 @@ class PhotoQualityScoringService {
 
     // MARK: - Vision scoring
 
-    @available(iOS 27, *)
+    @available(iOS 27, macCatalyst 27, *)
     private func scoreWithVision(_ photos: [Photo], context: ModelContext) async {
         for photo in photos {
             progress += 1
@@ -178,7 +178,7 @@ class PhotoQualityScoringService {
 
     // MARK: - Score generation
 
-    @available(iOS 27, *)
+    @available(iOS 27, macCatalyst 27, *)
     private func generateScore(image: UIImage) async -> PhotoScore? {
         let session = LanguageModelSession(instructions: """
             You are a travel photo quality assessor. Evaluate photos on:

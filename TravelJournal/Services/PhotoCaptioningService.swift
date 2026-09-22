@@ -226,7 +226,7 @@ class PhotoCaptioningService {
 
     // MARK: - Caption generation (vision)
 
-    @available(iOS 27, *)
+    @available(iOS 27, macCatalyst 27, *)
     private func generateCaptionWithVision(
         image: UIImage,
         people: [String],

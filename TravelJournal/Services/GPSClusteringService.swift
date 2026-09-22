@@ -18,6 +18,9 @@ import MapKit
 //
 // After clustering, each cluster's centroid is reverse-geocoded to
 // produce a suggested location name, city, and country.
+//
+// Uses MKReverseGeocodingRequest (introduced iOS 18 / macOS 15),
+// which replaces the deprecated CLGeocoder on Mac Catalyst.
 
 @Observable
 class GPSClusteringService {
@@ -115,10 +118,8 @@ class GPSClusteringService {
 
         // 3. Reverse geocode each centroid and create model objects ───────────
         //
-        // MKReverseGeocodingRequest replaces the deprecated CLGeocoder.
-        // The initializer returns an optional (nil for invalid coordinates).
-        // `request.mapItems` is async throws — unwrap with try? await.
-        // Rate-limit to ~1 request per second.
+        // MKReverseGeocodingRequest (iOS 18+) replaces CLGeocoder.reverseGeocodeLocation,
+        // which is deprecated on Mac Catalyst 26.0+. Rate-limit to ~1 request/second.
 
         for (index, cluster) in clusters.enumerated() {
             status = "Naming location \(index + 1) of \(total)…"
@@ -130,14 +131,14 @@ class GPSClusteringService {
             if let request = MKReverseGeocodingRequest(location: cluster.centroid),
                let mapItems = try? await request.mapItems,
                let mapItem = mapItems.first {
+
                 let rawName = mapItem.name ?? ""
-                city    = mapItem.addressRepresentations?.cityWithContext ?? ""
+                city = mapItem.addressRepresentations?.cityWithContext ?? ""
 
                 // Extract country from the formatted address representation.
                 // MKAddressRepresentations doesn't expose a dedicated country
-                // property in iOS 26/27, so parse the locale-aware formatted
-                // string. The country is consistently the last non-empty line
-                // when the address is formatted for the device locale.
+                // property in iOS 27, so parse the locale-aware formatted string.
+                // The country is consistently the last non-empty line.
                 if let formatted = mapItem.addressRepresentations?.formatted {
                     country = formatted
                         .components(separatedBy: "\n")
@@ -169,8 +170,6 @@ class GPSClusteringService {
             context.insert(location)
 
             // Create Visit — one per cluster. datetime = earliest photo in cluster.
-            // The visit has no album because it was derived from clustering, not from
-            // manual album assignment. That is fine: album is optional on Visit.
             let visit = Visit(datetime: cluster.earliestDate)
             visit.trip = trip
             visit.location = location
